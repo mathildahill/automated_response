@@ -60,7 +60,7 @@ for idx, record in enumerate(tqdm(decoded_text)):
     } for i in range(len(texts))])
 
 
-openai.api_key = "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"  #platform.openai.com
+openai.api_key = "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"  #platform.openai.com
 
 embed_model = "text-embedding-ada-002"
 
@@ -72,12 +72,12 @@ res = openai.Embedding.create(
 )
 
 
-index_name = 'edtech'
+index_name = 'edtech-gpt'
 
 # initialize connection to pinecone
 pinecone.init(
-    api_key='2dfaadf1-3a74-4963-969b-05132d7d398d',  # app.pinecone.io (console)
-    environment="eu-west1-gcp"  # next to API key in console
+    api_key='7f2b5253-e114-42db-8cdf-0327f5651ed9',  # app.pinecone.io (console)
+    environment="northamerica-northeast1-gcp"  # next to API key in console
 )
 
 # check if index already exists (it shouldn't if this is first time)
