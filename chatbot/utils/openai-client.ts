@@ -6,7 +6,7 @@ import { OpenAI } from 'langchain/llms';
 
 export const openai = new OpenAI({
   temperature: 0,
-  openAIApiKey:'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'
+  openAIApiKey:'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'
   //openAIApiKey: process.env.OPENAI_API_KEY
 });
 

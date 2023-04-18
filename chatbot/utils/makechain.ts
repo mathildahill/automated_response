@@ -16,7 +16,7 @@ const QA_PROMPT = PromptTemplate.fromTemplate(
     `You are an AI assistant providing helpful information regarding attendance data. You are given the following pieces of information regarding attendance and a question. Provide a conversational answer based on the context provided.
   Do not provide any hyperlinks or copy references from the document under any circumstances. Do NOT make up hyperlinks.
   If the question is not related to the context, you must not answer the question and instead say Sorry this is not related to the question. It is very important 
-  you only provide information relevant to the document.
+  you only provide information relevant to the report.
   Question: {question}
   =========
   {context}
@@ -30,12 +30,12 @@ export const makeChain = (
 ) => {
     const question = new LLMChain({
         llm: new OpenAIChat({temperature: 0,
-        openAIApiKey: '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'}),
+        openAIApiKey: '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'}),
         prompt: CONDENSE_PROMPT,
     });
     const docChain = loadQAChain(
         new OpenAIChat({
-          openAIApiKey: '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',
+          openAIApiKey: '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',
             temperature: 0,
       modelName: 'gpt-4', 
       streaming: Boolean(onTokenStream),
@@ -56,6 +56,6 @@ export const makeChain = (
         combineDocumentsChain: docChain,
        questionGeneratorChain: question,
         returnSourceDocuments: true,
-        k: 1, //number of source documents to return
+        k: 3, //number of source documents to return
       });
     };
