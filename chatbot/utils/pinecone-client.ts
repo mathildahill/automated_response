@@ -9,8 +9,8 @@ async function initPinecone() {
     const pinecone = new PineconeClient();
 
     await pinecone.init({
-      environment: "eu-west1-gcp", //this is in the dashboard
-      apiKey: "2cba2f18-f1b9-4a39-a14f-2a71c8370fe5",
+      environment: "northamerica-northeast1-gcp" , //this is in the dashboard
+      apiKey:'7f2b5253-e114-42db-8cdf-0327f5651ed9',
     });
 
     return pinecone;

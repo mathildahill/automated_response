@@ -23,7 +23,7 @@ export default async function handler(
   /* create vectorstore*/
   const vectorStore = await PineconeStore.fromExistingIndex(
       index,
-      new OpenAIEmbeddings({openAIApiKey:'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'}),
+      new OpenAIEmbeddings({openAIApiKey: process.env.OPENAI_API_KEY }),
     
   );
 
