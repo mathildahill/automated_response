@@ -15,8 +15,9 @@ from pydantic import BaseModel
 
 from dotenv import load_dotenv
 
-from utils import makechain
+from utils import makechain_period, makechain_school
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi import Request
 
 load_dotenv()
 
@@ -39,10 +40,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-async def send_message(message: str) -> AsyncIterable[str]:
-    callback = AsyncIteratorCallbackHandler()
+async def send_message(message: str, chatbot: str) -> AsyncIterable[str]:
     
-    chain = makechain(callback)
 
     async def wrap_done(fn: Awaitable, event: asyncio.Event):
         """Wrap an awaitable with a event to signal when it's done or an exception is raised."""
@@ -54,12 +53,23 @@ async def send_message(message: str) -> AsyncIterable[str]:
         finally:
             # Signal the aiter to stop.
             event.set()
+    callback = AsyncIteratorCallbackHandler()
     
-    vector_store = Pinecone.from_existing_index(index_name='ees', 
+    print(chatbot)
+    
+    if chatbot == 'schoolBriefing':
+        chain = makechain_school(callback)
+        vector_store = Pinecone.from_existing_index(index_name='auto-resp', 
                                                 embedding=OpenAIEmbeddings(openai_api_key=os.getenv('OPENAI_API_KEY')),
                                                 text_key='text')
-
-    similar_docs = vector_store.similarity_search(query= message, k = 4)
+        similar_docs = vector_store.similarity_search(query= message, k = 4, namespace='meals')
+    else:
+        chain = makechain_period(callback)
+        vector_store = Pinecone.from_existing_index(index_name='auto-resp', 
+                                                embedding=OpenAIEmbeddings(openai_api_key=os.getenv('OPENAI_API_KEY')),
+                                                text_key='text')
+        similar_docs = vector_store.similarity_search(query= message, k = 4, namespace='perprod')
+        
 
     
     task = asyncio.create_task(wrap_done(
@@ -68,7 +78,6 @@ async def send_message(message: str) -> AsyncIterable[str]:
     )
 
     list_docs = [BeautifulSoup(doc.page_content, 'html.parser').contents for doc in similar_docs]
-    print(list_docs)
 
     async for token in callback.aiter():
         yield f'{token}'
@@ -81,11 +90,13 @@ async def send_message(message: str) -> AsyncIterable[str]:
 class StreamRequest(BaseModel):
     """Request body for streaming."""
     question: str
+    chatbot: str
 
 
 @app.post("/api")
 def stream(body: StreamRequest):
-    return StreamingResponse(send_message(body.question), media_type="text/event-stream")
+    chatbot = body.chatbot
+    return StreamingResponse(send_message(body.question, chatbot), media_type="text/event-stream")
 
 
 if __name__ == "__main__":
