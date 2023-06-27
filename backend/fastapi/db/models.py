@@ -20,6 +20,7 @@ class ChatbotItem(Base):
     
     id = Column(Integer, primary_key = True, index = True)
     tone = Column(String)
+    audience = Column(String)
     contextual_information = Column(ARRAY(String))
     ChatbotMeta = Column(Integer, ForeignKey('ChatbotMeta.id'))
     
