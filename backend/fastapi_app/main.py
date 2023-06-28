@@ -1,23 +1,30 @@
+#standard libarires
 import os
-from typing import Awaitable, AsyncIterable
-import asyncio
-import pinecone
+from typing import Awaitable, AsyncIterable, List
 import json
-from bs4 import BeautifulSoup
+from pydantic import BaseModel
+from dotenv import load_dotenv
 import logging
-import uvicorn
-from fastapi import FastAPI
+#fastapi libaries
+from fastapi import FastAPI, Depends, HTTPException
 from fastapi.responses import StreamingResponse
+from fastapi.middleware.cors import CORSMiddleware
+import asyncio
+import uvicorn
+from bs4 import BeautifulSoup
+## LLM related libaries
+import pinecone
 from langchain.callbacks.streaming_aiter import AsyncIteratorCallbackHandler
 from langchain.vectorstores import Pinecone
 from langchain.embeddings import OpenAIEmbeddings
-from pydantic import BaseModel
-
-from dotenv import load_dotenv
-
+#File imports
 from utils import makechain_period, makechain_school
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi import Request
+#database
+from db.database import SessionLocal, engine
+from db import models, schemas
+from sqlalchemy.orm import Session
+
+models.Base.metadata.create_all(bind = engine)
 
 load_dotenv()
 
@@ -40,9 +47,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-async def send_message(message: str, chatbot: str) -> AsyncIterable[str]:
-    
+# Dependency
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
+async def send_message(message: str, chatbot: str) -> AsyncIterable[str]:
     async def wrap_done(fn: Awaitable, event: asyncio.Event):
         """Wrap an awaitable with a event to signal when it's done or an exception is raised."""
         try:
@@ -54,8 +67,6 @@ async def send_message(message: str, chatbot: str) -> AsyncIterable[str]:
             # Signal the aiter to stop.
             event.set()
     callback = AsyncIteratorCallbackHandler()
-    
-    print(chatbot)
     
     if chatbot == 'schoolBriefing':
         chain = makechain_school(callback)
@@ -98,6 +109,28 @@ def stream(body: StreamRequest):
     chatbot = body.chatbot
     return StreamingResponse(send_message(body.question, chatbot), media_type="text/event-stream")
 
+@app.get("/chatbots", response_model=List[schemas.ChatbotMetaRead])
+def get_all_chatbot(db: Session = Depends(get_db)):
+    chatbots = db.query(models.ChatbotMeta).all()
+    return chatbots
+
+@app.post('/chatbot-item', response_model= schemas.ChatbotItemCreate)
+def new_chatbot(chatbot: schemas.ChatbotItemCreate, db: Session = Depends(get_db)):
+    db_chatbot_item = models.ChatbotItem(tone = chatbot.tone, audience = chatbot.audience, 
+                                         contextual_information = chatbot.contextual_information,
+                                         ChatbotMeta = chatbot.ChatbotMeta)
+    db.add(db_chatbot_item)
+    db.commit()
+    db.refresh(db_chatbot_item)
+    return schemas.ChatbotItemCreate(**db_chatbot_item.__dict__)
+
+@app.get('/prompt_view')
+def get_prompt_view( db:Session = Depends(get_db)):
+    prompt_view = db.query(models.PromptView).first()
+    if prompt_view is None:
+        raise HTTPException(status_code=404, detail='View not found')
+    return prompt_view
+    
 
 if __name__ == "__main__":
     uvicorn.run(host="0.0.0.0", port=8000, app=app)
