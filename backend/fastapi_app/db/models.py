@@ -21,7 +21,8 @@ class ChatbotItem(Base):
     id = Column(Integer, primary_key = True, index = True)
     tone = Column(String, default='Informative and finish off on a positive note')
     audience = Column(String, default = 'Adults')
-    contextual_information = Column(String, default = '')
+    contextual_information = Column(String, default = ' ')
+    input_query = Column(String)
     ChatbotMeta = Column(Integer, ForeignKey('ChatbotMeta.id'))
     
     #owner = relationship('ChatbotMeta', back_populates='ChatbotItems')

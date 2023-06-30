@@ -5,6 +5,16 @@
     align-items: center;
     padding: 1rem;
   }
+  .section {
+    display: block;
+  }
+
+  .govuk-button, .govuk-input, .govuk-fieldset, .govuk-button-group {
+    display: block;
+    width: 100%;
+    margin-top: 10px; /* adjust as necessary */
+  }
+  
   
   .header {
     width: auto;

@@ -75,15 +75,14 @@ export default function Home() {
     let pending = '';
 
     try {
-      const response = await fetch('http://localhost:8000/api/', {
+      const response = await fetch('http://localhost:8000/chatbot-item/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          question,
-          history,
-          chatbot: 'schoolBriefing'
+          input_query: question,
+          chatbotMeta: 1
         }),
       });
 

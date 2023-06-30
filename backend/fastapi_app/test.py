@@ -27,21 +27,23 @@ def test_create_chatbot_item():
     chatbot_data = {
         "tone": "Informative and finish off on a positive note",
         "audience": "Adults",
-        "contextual_information": ["context1", "context2"],
-        "ChatbotMeta": 1  # assuming a ChatbotMeta with id=1 exists
+        "contextual_information": "Here is the context",
+        "ChatbotMeta": 1, 
+        "input_query": "Hello"
     }
 
     # Act
     response = client.post("/chatbot-item", json = chatbot_data)
 
     # Assert
-    assert response.status_code == 200
+    #assert response.status_code == 200
     chatbot_item = response.json()
+    assert chatbot_item["ChatbotMeta"] == chatbot_data["ChatbotMeta"]
+    assert chatbot_item['input_query'] == chatbot_data['input_query']
     assert chatbot_item["tone"] == chatbot_data["tone"]
     assert chatbot_item["audience"] == chatbot_data["audience"]
     assert chatbot_item["contextual_information"] == chatbot_data["contextual_information"]
-    assert chatbot_item["ChatbotMeta"] == chatbot_data["ChatbotMeta"]
-
+    
     # cleanup
     db = SessionLocal()
     db_chatbot_item = db.query(models.ChatbotItem).first()

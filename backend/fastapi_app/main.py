@@ -55,7 +55,7 @@ def get_db():
     finally:
         db.close()
 
-async def send_message(message: str, chatbot: str) -> AsyncIterable[str]:
+async def send_message(input_query: str, ChatbotMeta: str, audience: str, tone: str, contextual_information: str) -> AsyncIterable[str]:
     async def wrap_done(fn: Awaitable, event: asyncio.Event):
         """Wrap an awaitable with a event to signal when it's done or an exception is raised."""
         try:
@@ -68,29 +68,32 @@ async def send_message(message: str, chatbot: str) -> AsyncIterable[str]:
             event.set()
     callback = AsyncIteratorCallbackHandler()
     
-    if chatbot == 'schoolBriefing':
+    logging.error(f'Audience: {audience}, Tone: {tone}, Context: {contextual_information}')
+    
+    if ChatbotMeta == 1:
         chain = makechain_school(callback)
         vector_store = Pinecone.from_existing_index(index_name='auto-resp', 
-                                                embedding=OpenAIEmbeddings(openai_api_key=os.getenv('OPENAI_API_KEY')),
+                                                embedding=OpenAIEmbeddings(openai_api_key="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"),
                                                 text_key='text')
-        similar_docs = vector_store.similarity_search(query= message, k = 4, namespace='meals')
+        similar_docs = vector_store.similarity_search(query= input_query, k = 4, namespace='meals')
     else:
         chain = makechain_period(callback)
         vector_store = Pinecone.from_existing_index(index_name='auto-resp', 
-                                                embedding=OpenAIEmbeddings(openai_api_key=os.getenv('OPENAI_API_KEY')),
+                                                embedding=OpenAIEmbeddings(openai_api_key="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"),
                                                 text_key='text')
-        similar_docs = vector_store.similarity_search(query= message, k = 4, namespace='perprod')
+        similar_docs = vector_store.similarity_search(query= input_query, k = 4, namespace='perprod')
         
 
     
     task = asyncio.create_task(wrap_done(
-        chain.arun(input_documents = similar_docs, question = message),
+        chain.arun(input_documents = similar_docs, question = input_query, contextually = contextual_information, audience= audience, tone = tone),
         callback.done),
     )
 
     list_docs = [BeautifulSoup(doc.page_content, 'html.parser').contents for doc in similar_docs]
 
     async for token in callback.aiter():
+        logging.warn(f"{token}")
         yield f'{token}'
 
     yield json.dumps({'sourceDocuments': list_docs})
@@ -104,33 +107,34 @@ class StreamRequest(BaseModel):
     chatbot: str
 
 
-@app.post("/api")
-def stream(body: StreamRequest):
-    chatbot = body.chatbot
-    return StreamingResponse(send_message(body.question, chatbot), media_type="text/event-stream")
-
-@app.get("/chatbots", response_model=List[schemas.ChatbotMetaRead])
-def get_all_chatbot(db: Session = Depends(get_db)):
-    chatbots = db.query(models.ChatbotMeta).all()
-    return chatbots
-
-@app.post('/chatbot-item', response_model= schemas.ChatbotItemCreate)
-def new_chatbot(chatbot: schemas.ChatbotItemCreate, db: Session = Depends(get_db)):
-    db_chatbot_item = models.ChatbotItem(tone = chatbot.tone, audience = chatbot.audience, 
-                                         contextual_information = chatbot.contextual_information,
-                                         ChatbotMeta = chatbot.ChatbotMeta)
-    db.add(db_chatbot_item)
-    db.commit()
-    db.refresh(db_chatbot_item)
-    return schemas.ChatbotItemCreate(**db_chatbot_item.__dict__)
-
 @app.get('/prompt_view')
 def get_prompt_view( db:Session = Depends(get_db)):
     prompt_view = db.query(models.PromptView).first()
     if prompt_view is None:
         raise HTTPException(status_code=404, detail='View not found')
     return prompt_view
+
+@app.get("/chatbots", response_model=List[schemas.ChatbotMetaRead])
+def get_all_chatbot(db: Session = Depends(get_db)):
+    chatbots = db.query(models.ChatbotMeta).all()
+    return chatbots
+
+class DataModel(BaseModel):
+    input_query: str
+    ChatbotMeta: int
+    # add more attributes according to your need
+
+@app.post('/chatbot-item')
+def new_chatbot(data: schemas.ChatbotItemCreate):
+    prompt_input = data.dict()
+    logging.error(f"{prompt_input}")
+    return StreamingResponse(send_message(**prompt_input), media_type='text/event-stream')
     
+
+@app.post("/api")
+def stream(body: StreamRequest):
+    chatbot = body.chatbot
+    return StreamingResponse(send_message(body.question, chatbot), media_type="text/event-stream")
 
 if __name__ == "__main__":
     uvicorn.run(host="0.0.0.0", port=8000, app=app)
