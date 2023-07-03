@@ -2,7 +2,7 @@ import Layout from '@/components/layout';
 import { Button} from 'govuk-react';
 import { PromptView } from '@/types/prompt_refine';
 import { useRouter } from 'next/router';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef} from 'react';
 import { Message } from '@/types/chat';
 
 type AdjustStatusType = {
@@ -26,11 +26,18 @@ const PromptAdjuster = () => {
   const router = useRouter();
   const {chatbot} = router.query;
 
+  const messageListRef = useRef<HTMLDivElement>(null);
+  const textAreaRef = useRef<HTMLTextAreaElement>(null);
+
   const fetchData = async () => {
     const res = await fetch('http://localhost:8000/prompt_view');
     const json = await res.json();
     setData(json);
   }; 
+
+  useEffect(() => {
+    textAreaRef.current && (textAreaRef.current.scrollTop = textAreaRef.current.scrollHeight);
+  }, [messageState]);
 
   async function handleSubmit(){
     // only insert into payload values which have been saved
@@ -128,6 +135,11 @@ const PromptAdjuster = () => {
     setSavedStatus(prevState => ({ ...prevState, [name]: true }));
   };
 
+  const handleUndo = (name: keyof typeof text) => {
+    setSavedStatus(prevState => ({...prevState, [name]: false}));
+    setText(prevState => ({...prevState, [name]: ''}));
+  };
+
   return (
     <Layout>
         <div>
@@ -146,16 +158,20 @@ const PromptAdjuster = () => {
                 </h1>
                 </legend>
         </fieldset> {adjustStatus.inputQuery && (
-              <div>
-                {savedStatus.inputQuery? <p>Response saved</p> : (
-                <>
-                <textarea className="govuk-textarea" name="inputQuery" value={text.inputQuery} onChange={handleInputChange} style={{height: '250px'}}/>
-                <Button onClick={() => handleSave('inputQuery')}>Save</Button>
-                {console.log(savedStatus.inputQuery)}
-              </>)}
-            </div>
-            )}
-        </div>
+        <div>
+          {savedStatus.inputQuery ? (
+          <>
+          <p>Response saved</p>
+          <Button onClick={() => handleUndo('inputQuery')}>Undo</Button></>
+          ) : (
+          <>
+          <textarea className="govuk-textarea" name="inputQuery" value={text.inputQuery} onChange={handleInputChange} style={{height: '250px'}}/>
+          <Button onClick={() => handleSave('inputQuery')}>Save</Button>
+          </>
+          )}
+          </div>
+          )}
+           </div>
         <fieldset className="govuk-fieldset" aria-describedby="checkboxes-hint">
           <div className="govuk-form-group">
             <fieldset className="govuk-fieldset">
@@ -177,16 +193,21 @@ const PromptAdjuster = () => {
                     <label className="govuk-label govuk-radios__label" htmlFor="tone-no">No</label>
                   </div>
                 </div>
-                </fieldset>{adjustStatus.tone && (
-              <div>
-                {savedStatus.tone ? <p>Response saved</p> : (
-                <>
-                <textarea className="govuk-textarea" name="tone" value={text.tone} onChange={handleInputChange} style={{height: '100px'}}/>
-                <Button onClick={() => handleSave('tone')}>Save</Button>
-              </>)}
-            </div>
-            )}
-            </div>
+                </fieldset> {adjustStatus.tone && (
+                <div>
+                  {savedStatus.tone ? (
+                  <>
+                  <p>Response saved</p>
+                  <Button onClick={() => handleUndo('tone')}>Undo</Button>
+                  </>
+                  ) : (
+                  <>
+                  <textarea className="govuk-textarea" name="tone" value={text.tone} onChange={handleInputChange} style={{height: '250px'}}/>
+                  <Button onClick={() => handleSave('tone')}>Save</Button>
+                  </>
+                  )}
+                  </div>)}
+                </div>
             <div className="govuk-form-group">
               <fieldset className="govuk-fieldset">
                 <legend className="govuk-fieldset__legend govuk-fieldset__legend--m">
@@ -210,10 +231,21 @@ const PromptAdjuster = () => {
                 </div>
               </div>
            </fieldset>{adjustStatus.audience && (
-               <div> {savedStatus.audience ? <p>Response saved</p> : (<>
-                      <textarea className="govuk-textarea" name="audience" value={text.audience} onChange={handleInputChange} style={{height: '100px'}}/>
-                      <Button onClick={() => handleSave('audience')}>Save</Button></> )}
-                </div>)}
+           <div>
+            {savedStatus.audience ? (
+            <>
+            <p>Response saved</p>
+            <Button onClick={() => handleUndo('audience')}>Undo</Button>
+            </>
+            ) : (
+            <>
+            <textarea className="govuk-textarea" name="audience" value={text.audience} onChange={handleInputChange} style={{height: '250px'}}/>
+            <Button onClick={() => handleSave('audience')}>Save</Button>
+            </>
+            )}
+            </div>
+            )}
+
               </div>
               <div className="govuk-form-group">
                 <fieldset className="govuk-fieldset">
@@ -243,20 +275,29 @@ const PromptAdjuster = () => {
                   </div>
                 </fieldset>
                 {adjustStatus.contextualInfo && (
-                <div>{savedStatus.contextualInfo ? <p>Response saved</p> : (<>
-                <textarea className="govuk-textarea" name="contextualInfo" value={text.contextualInfo} onChange={handleInputChange} style={{height: '250px'}}/>
-                <Button onClick={() => handleSave('contextualInfo')} className="govuk-button">Save</Button></>)}
-              </div>)}
-              </div>
+                <div>
+                  {savedStatus.contextualInfo ? (
+                  <>
+                  <p>Response saved</p>
+                  <Button onClick={() => handleUndo('contextualInfo')}>Undo</Button>
+                  </>
+                  ) : (
+                  <>
+                  <textarea className="govuk-textarea" name="contextualInfo" value={text.contextualInfo} onChange={handleInputChange} style={{height: '250px'}}/>
+                  <Button onClick={() => handleSave('contextualInfo')}>Save</Button>
+                  </>
+                  )}</div>)}
+                  
+                  </div>
               </fieldset>
               <div className="govuk-button-group">
                 <Button onClick={handleSubmit} className="govuk-button">
-                   Submit
+                   Generate Response
                 </Button>
               </div>
 
               <div className="govuk-form-group"> {/* Apply GDS form group styling */}
-              <textarea className="govuk-textarea" value={messageState.message} style={{height: '250px'}}></textarea>
+              <textarea className="govuk-textarea" ref={textAreaRef} value={messageState.message} style={{height: '250px'}}></textarea>
             </div>
               
 

@@ -73,13 +73,13 @@ async def send_message(input_query: str, ChatbotMeta: str, audience: str, tone: 
     if ChatbotMeta == 1:
         chain = makechain_school(callback)
         vector_store = Pinecone.from_existing_index(index_name='auto-resp', 
-                                                embedding=OpenAIEmbeddings(openai_api_key="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"),
+                                                embedding=OpenAIEmbeddings(openai_api_key=os.getenv("OPENAI_API_KEY")),
                                                 text_key='text')
         similar_docs = vector_store.similarity_search(query= input_query, k = 4, namespace='meals')
     else:
         chain = makechain_period(callback)
         vector_store = Pinecone.from_existing_index(index_name='auto-resp', 
-                                                embedding=OpenAIEmbeddings(openai_api_key="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"),
+                                                embedding=OpenAIEmbeddings(openai_api_key=os.getenv('OPENAI_API_KEY')),
                                                 text_key='text')
         similar_docs = vector_store.similarity_search(query= input_query, k = 4, namespace='perprod')
         

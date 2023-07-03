@@ -65,7 +65,7 @@ def makechain_school(callback) -> load_qa_chain:
         verbose=True,
         callbacks=[callback],
         model='gpt-4',
-        openai_api_key="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"
+        openai_api_key=os.getenv("OPENAI_API_KEY")
     )
 
     chain = load_qa_chain(llm=model, chain_type='stuff', prompt = QA_PROMPT_SCHOOL)
@@ -79,7 +79,7 @@ def makechain_period(callback) -> load_qa_chain:
         verbose=True,
         callbacks=[callback],
         model='gpt-4',
-        openai_api_key="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"
+        openai_api_key=os.getenv("OPENAI_API_KEY")
     )
 
     chain = load_qa_chain(llm=model, chain_type='stuff', prompt = QA_PROMPT_PERIOD)
