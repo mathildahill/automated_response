@@ -1,20 +1,6 @@
 from pydantic import BaseModel, validator
 from typing import List, Optional
 
-##Base
-class ChatbotItemsBase(BaseModel):
-    tone:str
-    audience:str 
-    contextual_information: str = ''
-    input_query: str
-    
-##Read
-class ChatbotItemsRead(ChatbotItemsBase):
-    ChatbotMeta: int
-    
-    class Config:
-        orm_mode = True
-
 ##Inherits from base model       
 class ChatbotItemCreate(BaseModel):
     tone: Optional[str] = "Informative and finish off on a positive note"
@@ -23,32 +9,29 @@ class ChatbotItemCreate(BaseModel):
     input_query: str
     ChatbotMeta: int
     
-   # @validator('tone', 'audience')
-    #def check_word_count(cls, v):
-    #    if v:
-   #         count = v.split()
-   #         if len(count) > 20:
-   #             raise ValueError('Too many words')
-   #     return v
+    @validator('tone', 'audience')
+    def check_word_count(cls, v):
+        if v:
+            count = v.split()
+            if len(count) > 30:
+                raise ValueError('Tone or audience too long')
+        return v
     
-    #@validator('contextual_information')
-    #def validate_context_size(cls, lis):
-    #    if lis:
-    #        count = lis.split()
-    ##        if len(count) > 400:
-    #            raise ValueError('Too many words have been used')
-    #    return lis
+    @validator('contextual_information')
+    def validate_context_size(cls, lis):
+        if lis:
+            count = lis.split()
+            if len(count) > 400:
+                raise ValueError('Too much additional context is added')
+        return lis
     
-    #@validator('input_query')
-    #def check_input_query(cls, lis):
-    #    count = lis.split()
-    #    if len(count > 1200):
-    #        raise ValueError("This input is too long")
-    #    return lis
+    @validator('input_query')
+    def check_input_query(cls, lis):
+        count = lis.split()
+        if len(count > 1200):
+            raise ValueError("Input query is too long, please try again")
+        return lis
     
-    
-    
-
 #Base Model
 class ChatbotMetaBase(BaseModel):
     name: str

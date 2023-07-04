@@ -78,6 +78,11 @@ const PromptAdjuster = () => {
         body: JSON.stringify(payload)
     })
 
+    if(!res.ok){
+      const errorMessage = await res.json();
+      setError(errorMessage.message)
+      return;
+    }
     const data = await res.body;
 
     if(!data){
@@ -137,7 +142,7 @@ const PromptAdjuster = () => {
 
   const handleUndo = (name: keyof typeof text) => {
     setSavedStatus(prevState => ({...prevState, [name]: false}));
-    setText(prevState => ({...prevState, [name]: ''}));
+    //setText(prevState => ({...prevState, [name]: ''}));
   };
 
   return (
@@ -297,7 +302,7 @@ const PromptAdjuster = () => {
               </div>
 
               <div className="govuk-form-group"> {/* Apply GDS form group styling */}
-              <textarea className="govuk-textarea" ref={textAreaRef} value={messageState.message} style={{height: '250px'}}></textarea>
+              <textarea className="govuk-textarea" ref={textAreaRef} value={messageState.message} style={{height: '350px'}}></textarea>
             </div>
               
 
