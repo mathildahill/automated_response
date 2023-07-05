@@ -5,17 +5,20 @@ import json
 from dotenv import load_dotenv
 import logging
 #fastapi libaries
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Body
 from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import asyncio
 import uvicorn
 from bs4 import BeautifulSoup
 ## LLM related libaries
-import pinecone
 from langchain.callbacks.streaming_aiter import AsyncIteratorCallbackHandler
-from langchain.vectorstores import Pinecone
 from langchain.embeddings import OpenAIEmbeddings
+from langchain.docstore.document import Document
+import openai
+#vdatabase libraries
+from qdrant_client import QdrantClient
+import qdrant_client.models as models
 #File imports
 from utils import makechain_period, makechain_school
 #database
@@ -26,9 +29,7 @@ from sqlalchemy.orm import Session
 models.Base.metadata.create_all(bind = engine)
 
 load_dotenv()
-
-pinecone.init(api_key=os.getenv('PINECONE_API_KEY'), environment=os.getenv('PINECONE_ENV'))
-logging.debug(os.getenv('PINECONE_API_KEY'))
+logging.basicConfig(level = logging.INFO)
 
 app = FastAPI()
 
@@ -36,6 +37,7 @@ origins = [
     "http://localhost",
     "http://localhost:8080",
    "http://localhost:3000",
+   'http://localhost:3000/1/update'
 ]
 
 app.add_middleware(
@@ -55,6 +57,11 @@ def get_db():
         db.close()
 
 async def send_message(input_query: str, ChatbotMeta: str, audience: str, tone: str, contextual_information: str) -> AsyncIterable[str]:
+    openai.api_key = os.getenv('OPENAI_API_KEY')
+    logging.info(f'OpenAI key: {openai.api_key}')
+    client = QdrantClient("localhost", port = 6333)
+    EMBEDS = openai.Embedding.create(input = input_query, engine = 'text-embedding-ada-002')
+    
     async def wrap_done(fn: Awaitable, event: asyncio.Event):
         """Wrap an awaitable with a event to signal when it's done or an exception is raised."""
         try:
@@ -70,29 +77,29 @@ async def send_message(input_query: str, ChatbotMeta: str, audience: str, tone: 
     
     if ChatbotMeta == 1:
         chain = makechain_school(callback)
-        vector_store = Pinecone.from_existing_index(index_name='auto-resp', 
-                                                embedding=OpenAIEmbeddings(openai_api_key=os.getenv("OPENAI_API_KEY")),
-                                                text_key='text')
         try:
-            similar_docs = vector_store.similarity_search(query= input_query, k = 4, namespace='meals')
+            resp = client.search(collection_name='schoolBrief',
+                                 query_vector=EMBEDS['data'][0]['embedding'],
+                                 limit=4)
         except Exception as e:
             raise HTTPException(status_code=503, detail="Unable to connect to the vector store database") from e
     else:
         chain = makechain_period(callback)
-        vector_store = Pinecone.from_existing_index(index_name='auto-resp', 
-                                                embedding=OpenAIEmbeddings(openai_api_key=os.getenv('OPENAI_API_KEY')),
-                                                text_key='text')
         try:
-            similar_docs = vector_store.similarity_search(query= input_query, k = 4, namespace='perprod')
+            resp = client.search(query_vector=EMBEDS['data'][0]['embedding'], 
+                     limit = 5, 
+                     collection_name = 'perprod')
         except Exception as e:
             raise HTTPException(status_code=503, detail="Unable to connect to the vector store database") from e
         
+    documents = [Document(page_content = resp[i].payload['text']) for i in range(len(resp))]
+        
     task = asyncio.create_task(wrap_done(
-        chain.arun(input_documents = similar_docs, question = input_query, contextually = contextual_information, audience= audience, tone = tone),
+        chain.arun(input_documents = documents, question = input_query, contextually = contextual_information, audience= audience, tone = tone),
         callback.done),
     )
 
-    list_docs = [BeautifulSoup(doc.page_content, 'html.parser').contents for doc in similar_docs]
+    list_docs = [BeautifulSoup(doc.page_content, 'html.parser').contents for doc in documents]
 
     async for token in callback.aiter():
         logging.warn(f"{token}")
@@ -119,12 +126,12 @@ def get_all_chatbot(db: Session = Depends(get_db)):
 
 @app.post('/chatbot-item')
 def new_chatbot(data: schemas.ChatbotItemCreate):
+    logging.warn(data.json())
     prompt_input = data.dict()
-    logging.error(f"{prompt_input}")
     try:
         return StreamingResponse(send_message(**prompt_input), media_type='text/event-stream')
     except HTTPException as e:
-        return JSONResponse(status_code=e.status_code, content={'message': e.detail})
+        return JSONResponse(status_code=e.status_code, content={'Http error': e.detail})
     except Exception as e:
         return JSONResponse(status_code=400, content = {"message": f"An error occurred: {str(e)}"})
 

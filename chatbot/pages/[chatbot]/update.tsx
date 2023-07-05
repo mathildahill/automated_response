@@ -4,6 +4,7 @@ import { PromptView } from '@/types/prompt_refine';
 import { useRouter } from 'next/router';
 import { useState, useEffect, useRef} from 'react';
 import { Message } from '@/types/chat';
+import Link from 'next/link';
 
 type AdjustStatusType = {
   inputQuery: boolean
@@ -19,15 +20,22 @@ const PromptAdjuster = () => {
   const [text, setText] = useState({inputQuery: '', tone: '', audience: '', contextualInfo: '' });
   const [savedStatus, setSavedStatus] = useState({inputQuery:false, tone: false, audience: false, contextualInfo: false });
   const [data, setData] = useState<PromptView | null>(null);
+  const [buttonText, setButtonText] = useState("Draft response");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [messageState, setMessageState] = useState<Message>({message: '', isStreaming: false });
 
   const router = useRouter();
   const {chatbot} = router.query;
-
-  const messageListRef = useRef<HTMLDivElement>(null);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
+
+  const copyToClipboard = async(e: any) => {
+    if (messageState.message != '') {
+      await navigator.clipboard.writeText(messageState.message)
+      alert('Text copied')
+    }
+  };
+
 
   const fetchData = async () => {
     const res = await fetch('http://localhost:8000/prompt_view');
@@ -67,6 +75,8 @@ const PromptAdjuster = () => {
     }
 
     let pending = '';
+
+    setButtonText('Loading...')
 
     try{
 
@@ -111,6 +121,7 @@ const PromptAdjuster = () => {
         });
     }
   }
+    setButtonText('Response generated')
     setLoading(false);
   
   } catch(error) {
@@ -119,9 +130,7 @@ const PromptAdjuster = () => {
   }
 
   }
-
-
-
+  
   useEffect(() => {
     fetchData();
   }, []);
@@ -151,6 +160,14 @@ const PromptAdjuster = () => {
           <h1 className="govuk-heading-xl">
             {data?.title}
           </h1>
+
+          <Link href='/' >
+                    Return to homepage
+                    <div className='govuk-link'>
+
+                    </div>
+          </Link>
+          <br />
           <p className="govuk-body">
             {data?.description}
           </p>
@@ -170,7 +187,7 @@ const PromptAdjuster = () => {
           <Button onClick={() => handleUndo('inputQuery')}>Undo</Button></>
           ) : (
           <>
-          <textarea className="govuk-textarea" name="inputQuery" value={text.inputQuery} onChange={handleInputChange} style={{height: '250px'}}/>
+          <textarea className="govuk-textarea" name="inputQuery" placeholder='Input the query here' value={text.inputQuery} onChange={handleInputChange} style={{height: '250px'}}/>
           <Button onClick={() => handleSave('inputQuery')}>Save</Button>
           </>
           )}
@@ -207,7 +224,7 @@ const PromptAdjuster = () => {
                   </>
                   ) : (
                   <>
-                  <textarea className="govuk-textarea" name="tone" value={text.tone} onChange={handleInputChange} style={{height: '250px'}}/>
+                  <textarea className="govuk-textarea" name="tone" placeholder='Change the tone here' value={text.tone} onChange={handleInputChange} style={{height: '250px'}}/>
                   <Button onClick={() => handleSave('tone')}>Save</Button>
                   </>
                   )}
@@ -230,7 +247,8 @@ const PromptAdjuster = () => {
                     <label className="govuk-label govuk-radios__label" htmlFor="audience-yes">Yes</label>
                   </div>
                 <div className="govuk-radios__item">
-                     <input id="audience-no" className="govuk-radios__input" name="audience" type="radio" value="No" checked={!adjustStatus.audience} 
+                     <input id="audience-no" className="govuk-radios__input" name="audience" placeholder='Change the audience the response is directed to'
+                     type="radio" value="No" checked={!adjustStatus.audience} 
                     onChange={() => handleAdjustClick('audience')}/>
                     <label className="govuk-label govuk-radios__label" htmlFor="audience-no">No</label>
                 </div>
@@ -288,7 +306,8 @@ const PromptAdjuster = () => {
                   </>
                   ) : (
                   <>
-                  <textarea className="govuk-textarea" name="contextualInfo" value={text.contextualInfo} onChange={handleInputChange} style={{height: '250px'}}/>
+                  <textarea className="govuk-textarea" name="contextualInfo" value={text.contextualInfo} placeholder='Add contextual information here'
+                   onChange={handleInputChange} style={{height: '250px'}}/>
                   <Button onClick={() => handleSave('contextualInfo')}>Save</Button>
                   </>
                   )}</div>)}
@@ -297,13 +316,18 @@ const PromptAdjuster = () => {
               </fieldset>
               <div className="govuk-button-group">
                 <Button onClick={handleSubmit} className="govuk-button">
-                   Generate Response
+                   {buttonText}
                 </Button>
               </div>
 
-              <div className="govuk-form-group"> {/* Apply GDS form group styling */}
-              <textarea className="govuk-textarea" ref={textAreaRef} value={messageState.message} style={{height: '350px'}}></textarea>
-            </div>
+              <div className="govuk-form-group"> 
+              <textarea className="govuk-textarea" ref={textAreaRef} placeholder="Please submit a query above to draft a response" 
+              value={messageState.message} style={{height: '350px'}} />
+              {
+              messageState.message && 
+              <button onClick={copyToClipboard} className="govuk-button govuk-button--secondary">
+                Copy text
+              </button>}</div>
               
 
                 </Layout>
