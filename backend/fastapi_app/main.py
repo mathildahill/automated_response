@@ -102,7 +102,7 @@ async def send_message(input_query: str, ChatbotMeta: str, audience: str, tone: 
     list_docs = [BeautifulSoup(doc.page_content, 'html.parser').contents for doc in documents]
 
     async for token in callback.aiter():
-        logging.warn(f"{token}")
+        logging.warning(f"{token}")
         yield f'{token}'
 
     yield json.dumps({'sourceDocuments': list_docs})
@@ -126,7 +126,7 @@ def get_all_chatbot(db: Session = Depends(get_db)):
 
 @app.post('/chatbot-item')
 def new_chatbot(data: schemas.ChatbotItemCreate):
-    logging.warn(data.json())
+    logging.warning(data.json())
     prompt_input = data.dict()
     try:
         return StreamingResponse(send_message(**prompt_input), media_type='text/event-stream')
