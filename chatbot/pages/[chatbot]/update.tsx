@@ -17,7 +17,7 @@ type AdjustKey = keyof AdjustStatusType;
 
 const PromptAdjuster = () => {
   const [adjustStatus, setAdjustStatus] = useState({inputQuery:true, tone: false, audience: false, contextualInfo: false });
-  const [text, setText] = useState({inputQuery: '', tone: '', audience: '', contextualInfo: '' });
+  const [text, setText] = useState({inputQuery: '', tone: '', audience: '', contextualInfo: '', messageDisplay: '' });
   const [savedStatus, setSavedStatus] = useState({inputQuery:false, tone: false, audience: false, contextualInfo: false });
   const [data, setData] = useState<PromptView | null>(null);
   const [buttonText, setButtonText] = useState("Draft response");
@@ -29,13 +29,22 @@ const PromptAdjuster = () => {
   const {chatbot} = router.query;
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
-  const copyToClipboard = async(e: any) => {
+  const copyToClipboard = async() => {
     if (messageState.message != '') {
       await navigator.clipboard.writeText(messageState.message)
       alert('Text copied')
     }
   };
 
+  const reset = () => {
+    setAdjustStatus({inputQuery:true, tone: false, audience: false, contextualInfo: false});
+    setText({inputQuery: '', tone: '', audience: '', contextualInfo: '', messageDisplay: '' });
+    setSavedStatus({inputQuery:false, tone: false, audience: false, contextualInfo: false});
+    setButtonText("Draft response");
+    setError(null);
+    setLoading(false);
+    setMessageState({message: '', isStreaming: false });
+  };
 
   const fetchData = async () => {
     const res = await fetch('http://localhost:8000/prompt_view');
@@ -87,7 +96,7 @@ const PromptAdjuster = () => {
         },
         body: JSON.stringify(payload)
     })
-
+    
     if(!res.ok){
       const errorMessage = await res.json();
       setError(errorMessage.message)
@@ -116,6 +125,7 @@ const PromptAdjuster = () => {
         });
     } else{
         pending += chunkValue;
+        text.messageDisplay = pending
         setMessageState((prevState) => {
           return {...prevState, message: pending};
         });
@@ -322,14 +332,16 @@ const PromptAdjuster = () => {
 
               <div className="govuk-form-group"> 
               <textarea className="govuk-textarea" ref={textAreaRef} placeholder="Please submit a query above to draft a response" 
-              value={messageState.message} style={{height: '350px'}} />
+              value={text.messageDisplay} style={{height: '350px'}} onChange={handleInputChange} name='messageDisplay' />
               {
               messageState.message && 
               <button onClick={copyToClipboard} className="govuk-button govuk-button--secondary">
                 Copy text
               </button>}</div>
-              
 
+              <Button onClick={reset}>
+                Reset
+              </Button>
                 </Layout>
                 );
 }

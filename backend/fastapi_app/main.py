@@ -5,15 +5,16 @@ import json
 from dotenv import load_dotenv
 import logging
 #fastapi libaries
-from fastapi import FastAPI, Depends, HTTPException, Body
+from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.encoders import jsonable_encoder
+from starlette.exceptions import HTTPException as StarletteHTTPException
 import asyncio
 import uvicorn
 from bs4 import BeautifulSoup
 ## LLM related libaries
 from langchain.callbacks.streaming_aiter import AsyncIteratorCallbackHandler
-from langchain.embeddings import OpenAIEmbeddings
 from langchain.docstore.document import Document
 import openai
 #vdatabase libraries
@@ -25,6 +26,7 @@ from utils import makechain_period, makechain_school
 from db.database import SessionLocal, engine
 from db import models, schemas
 from sqlalchemy.orm import Session
+from pydantic import ValidationError
 
 models.Base.metadata.create_all(bind = engine)
 
@@ -108,7 +110,14 @@ async def send_message(input_query: str, ChatbotMeta: str, audience: str, tone: 
     yield json.dumps({'sourceDocuments': list_docs})
 
     await task
-
+    
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+    if exc.status_code == 422:
+        return JSONResponse(status_code=403, content={'message': "One of your inputs is too long"})
+    else:
+        return JSONResponse(status_code=exc.status_code, content={'Http error': exc.detail})
+    
 @app.get('/prompt_view')
 def get_prompt_view( db:Session = Depends(get_db)):
     prompt_view = db.query(models.PromptView).first()
@@ -125,10 +134,13 @@ def get_all_chatbot(db: Session = Depends(get_db)):
     return chatbots
 
 @app.post('/chatbot-item')
-def new_chatbot(data: schemas.ChatbotItemCreate):
-    logging.warning(data.json())
-    prompt_input = data.dict()
+def new_chatbot(data: schemas.ChatbotItemCreate, db:Session = Depends(get_db)):
     try:
+        chatbot_item = models.ChatbotItem(**data.dict())
+        db.add(chatbot_item)
+        db.commit()
+        db.refresh(chatbot_item)
+        prompt_input = data.dict()
         return StreamingResponse(send_message(**prompt_input), media_type='text/event-stream')
     except HTTPException as e:
         return JSONResponse(status_code=e.status_code, content={'Http error': e.detail})
