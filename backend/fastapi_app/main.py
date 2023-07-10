@@ -8,7 +8,6 @@ import logging
 from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.encoders import jsonable_encoder
 from starlette.exceptions import HTTPException as StarletteHTTPException
 import asyncio
 import uvicorn
@@ -95,11 +94,14 @@ async def send_message(input_query: str, ChatbotMeta: str, audience: str, tone: 
             raise HTTPException(status_code=503, detail="Unable to connect to the vector store database") from e
         
     documents = [Document(page_content = resp[i].payload['text']) for i in range(len(resp))]
-        
-    task = asyncio.create_task(wrap_done(
+    
+    try:   
+        task = asyncio.create_task(wrap_done(
         chain.arun(input_documents = documents, question = input_query, contextually = contextual_information, audience= audience, tone = tone),
         callback.done),
     )
+    except Exception as e:
+        raise HTTPException(status_code=408, detail='There is a network error, please try again') from e
 
     list_docs = [BeautifulSoup(doc.page_content, 'html.parser').contents for doc in documents]
 
@@ -110,14 +112,11 @@ async def send_message(input_query: str, ChatbotMeta: str, audience: str, tone: 
     yield json.dumps({'sourceDocuments': list_docs})
 
     await task
-    
+ 
 @app.exception_handler(StarletteHTTPException)
 async def http_exception_handler(request: Request, exc: StarletteHTTPException):
-    if exc.status_code == 422:
-        return JSONResponse(status_code=403, content={'message': "One of your inputs is too long"})
-    else:
-        return JSONResponse(status_code=exc.status_code, content={'Http error': exc.detail})
-    
+    return JSONResponse(status_code=exc.status_code, content={'error': exc.detail})   
+
 @app.get('/prompt_view')
 def get_prompt_view( db:Session = Depends(get_db)):
     prompt_view = db.query(models.PromptView).first()
@@ -142,10 +141,8 @@ def new_chatbot(data: schemas.ChatbotItemCreate, db:Session = Depends(get_db)):
         db.refresh(chatbot_item)
         prompt_input = data.dict()
         return StreamingResponse(send_message(**prompt_input), media_type='text/event-stream')
-    except HTTPException as e:
-        return JSONResponse(status_code=e.status_code, content={'Http error': e.detail})
     except Exception as e:
-        return JSONResponse(status_code=400, content = {"message": f"An error occurred: {str(e)}"})
+         return JSONResponse(status_code=400, content={"error": f"An error occurred: {str(e)}"})
 
 if __name__ == "__main__":
     uvicorn.run(host="0.0.0.0", port=8000, app=app)
