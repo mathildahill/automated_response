@@ -13,24 +13,24 @@ class ChatbotItemCreate(BaseModel):
     def check_word_count(cls, v):
         if v:
             count = v.split()
-            if len(count) > 30:
-                raise ValueError('Tone or audience too long')
+            if len(count) > 20:
+                raise ValueError('Tone or audience inputs are too long. Must be less than 20 words each.')
         return v
     
-    @validator('contextual_information')
-    def validate_context_size(cls, lis):
-        if lis:
-            count = lis.split()
-            if len(count) > 400:
-                raise ValueError('Too much additional context is added')
-        return lis
+    #@validator('contextual_information')
+    #def validate_context_size(cls, lis):
+    #    if lis:
+    #        count = lis.split()
+    #        if len(count) > 400:
+    #            raise ValueError('Too much additional context is added')
+    #    return lis
     
-    @validator('input_query')
-    def check_input_query(cls, lis):
-        count = lis.split()
-        if len(count > 1200):
-            raise ValueError("Input query is too long, please try again")
-        return lis
+    #@validator('input_query')
+    #def check_input_query(cls, lis):
+    #    count = lis.split()
+    #    if len(count > 1200):
+    #        raise ValueError("Input query is too long, please try again")
+    #    return lis
     
 #Base Model
 class ChatbotMetaBase(BaseModel):

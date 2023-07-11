@@ -1,5 +1,5 @@
 import Layout from '@/components/layout'; 
-import { Button} from 'govuk-react';
+import { Button, ErrorText} from 'govuk-react';
 import { PromptView } from '@/types/prompt_refine';
 import { useRouter } from 'next/router';
 import { useState, useEffect, useRef} from 'react';
@@ -99,7 +99,10 @@ const PromptAdjuster = () => {
     
     if(!res.ok){
       const errorMessage = await res.json();
-      setError(errorMessage.message)
+      console.log(errorMessage)
+      setError(errorMessage.detail[0].msg)
+      setButtonText('Response generated')
+      setLoading(false);
       return;
     }
     const data = await res.body;
@@ -137,6 +140,7 @@ const PromptAdjuster = () => {
   } catch(error) {
     setLoading(false)
     setError('An error occurred while fetching the data. Please try again.');
+    setButtonText('Response Generated')
   }
 
   }
@@ -333,6 +337,7 @@ const PromptAdjuster = () => {
               <div className="govuk-form-group"> 
               <textarea className="govuk-textarea" ref={textAreaRef} placeholder="Please submit a query above to draft a response" 
               value={text.messageDisplay} style={{height: '350px'}} onChange={handleInputChange} name='messageDisplay' />
+              {error && <ErrorText id="error-message-id">{error}</ErrorText>}
               {
               messageState.message && 
               <button onClick={copyToClipboard} className="govuk-button govuk-button--secondary">
