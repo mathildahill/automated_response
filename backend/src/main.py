@@ -5,7 +5,7 @@ import json
 from dotenv import load_dotenv
 import logging
 #fastapi libaries
-from fastapi import FastAPI, Depends, HTTPException, Request
+from fastapi import FastAPI, Depends, Request, HTTPException
 from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -83,7 +83,7 @@ async def send_message(input_query: str, ChatbotMeta: str, audience: str, tone: 
                                  query_vector=EMBEDS['data'][0]['embedding'],
                                  limit=4)
         except Exception as e:
-            raise HTTPException(status_code=503, detail="Unable to connect to the vector store database") from e
+            raise StarletteHTTPException(status_code=503, detail="Unable to connect to the vector store database") from e
     else:
         chain = makechain_period(callback)
         try:
@@ -91,7 +91,7 @@ async def send_message(input_query: str, ChatbotMeta: str, audience: str, tone: 
                      limit = 5, 
                      collection_name = 'perprod')
         except Exception as e:
-            raise HTTPException(status_code=503, detail="Unable to connect to the vector store database") from e
+            raise StarletteHTTPException(status_code=503, detail="Unable to connect to the vector store database") from e
         
     documents = [Document(page_content = resp[i].payload['text']) for i in range(len(resp))]
     
@@ -101,7 +101,7 @@ async def send_message(input_query: str, ChatbotMeta: str, audience: str, tone: 
         callback.done),
     )
     except Exception as e:
-        raise HTTPException(status_code=408, detail='There is a network error, please try again') from e
+        raise StarletteHTTPException(status_code=408, detail='There is a network error, please try again') from e
 
     list_docs = [BeautifulSoup(doc.page_content, 'html.parser').contents for doc in documents]
 
@@ -141,8 +141,8 @@ def new_chatbot(data: schemas.ChatbotItemCreate, db:Session = Depends(get_db)):
         db.refresh(chatbot_item)
         prompt_input = data.dict()
         return StreamingResponse(send_message(**prompt_input), media_type='text/event-stream')
-    except Exception as e:
-         return JSONResponse(status_code=400, content={"error": f"An error occurred: {str(e)}"})
+    except:
+         raise StarletteHTTPException(status_code=500, detail='Internal server error')
 
 if __name__ == "__main__":
     uvicorn.run(host="0.0.0.0", port=8000, app=app)
