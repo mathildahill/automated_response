@@ -1,14 +1,13 @@
 import fitz
 import tiktoken
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from tqdm import tqdm
-from uuid import uuid4
-import pinecone
 import openai
 import logging
 import os
+from qdrant_client import QdrantClient
+import qdrant_client.models as models
 
-
+logging.basicConfig(level = logging.INFO)
 document = fitz.open('files/Period Products Core Brief_Oct22[4056].pdf')
 tokenizer = tiktoken.get_encoding('p50k_base')
 
@@ -32,39 +31,44 @@ text_splitter = RecursiveCharacterTextSplitter(
     length_function=tiktoken_len,
     separators=["\n\n", "\n", " ", ""])
 
-
 chunks = []
-for record in tqdm(whole_text):
+
+for record in whole_text:
     text_temp = text_splitter.split_text(record)
-    chunks.extend([{
-        'id':str(uuid4()),
-       'text': text_temp[i],
-        'chunk':i} for i in range(len(text_temp))])
     
+    chunks.extend([{
+        'text': text_temp[i]
+    } for i in range(len(text_temp))])
 
-pinecone.init(api_key=os.getenv('PINECONE_API_KEY'), environment=os.getenv('PINECONE_ENV'))
-index = pinecone.Index(index_name='auto-resp')
+client = QdrantClient("localhost", port = 6333)
+collection_names = []
+for i in range(len(client.get_collections().collections)):
+    collection_names.append(client.get_collections().collections[i].name)
+    
+if 'perprod' in collection_names:
+    collection_info = client.get_collection(collection_name = 'perprod')
+else:
+    collection_info = client.create_collection(collection_name = 'perprod', vectors_config = models.VectorParams(distance = models.Distance.COSINE,
+                                                                                                         size = 1536))
 
-BATCH_SIZE = 100
-
-for i in tqdm(range(0, len(chunks), BATCH_SIZE)):
-    batch_end = min(len(chunks), i + BATCH_SIZE)
-    meta_batch = chunks[i:batch_end]
-    ids_batch = [x['id'] for x in meta_batch]
-    texts = [x['text'] for x in meta_batch]
-    embeds = None
+for i, observation in enumerate(chunks):
+    id = i 
+    text = observation['text']
+    
     try:
         openai.api_key = os.getenv('OPENAI_API_KEY')
-        logging.info(openai.api_key)
-        res = openai.Embedding.create(input=texts, engine="text-embedding-ada-002")
+        res = openai.Embedding.create(input = text, engine = 'text-embedding-ada-002')
     except Exception as e:
-            logging.error(f"An error occurred: {e}.")
-            break
-            
-    embeds = [record['embedding'] for record in res['data']]
-    meta_batch = [{'text': x['text'], 'chunk': x['chunk']} for x in meta_batch]
-    to_upsert = list(zip(ids_batch, embeds, meta_batch))
-
-    # Upsert to Pinecone
-    index.upsert(vectors=to_upsert, namespace= 'perprod')
-    logging.info(f"Embeddings upserted ")
+        logging.error(f'The following exception has occured. Could not embed texts: {e}')
+        
+    client.upsert(collection_name='perprod',
+                  points = [models.PointStruct(
+                      id = i, 
+                      payload = {
+                          'text': text
+                      },
+                      vector = res['data'][0]['embedding']
+                  )])
+    logging.info("Text uploaded")
+    
+logging.info('Embeddings upserted')
