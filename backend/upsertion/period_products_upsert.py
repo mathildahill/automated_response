@@ -6,9 +6,15 @@ import logging
 import os
 from qdrant_client import QdrantClient
 import qdrant_client.models as models
+from dotenv import load_dotenv
+import pathlib
+
+BASE_DIR = pathlib.Path(__file__).parent.parent
+ENV_PATH = BASE_DIR/'.env'
+load_dotenv(dotenv_path = ENV_PATH)
 
 logging.basicConfig(level = logging.INFO)
-document = fitz.open('files/Downloaded version SCHOOL FOOD CORE BRIEFING PACK.pdf')
+document = fitz.open('../files/Period Products Core Brief_Oct22[4056].pdf')
 tokenizer = tiktoken.get_encoding('p50k_base')
 
 whole_text = []
@@ -41,17 +47,16 @@ for record in whole_text:
     } for i in range(len(text_temp))])
 
 client = QdrantClient("localhost", port = 6333)
-
 collection_names = []
 for i in range(len(client.get_collections().collections)):
     collection_names.append(client.get_collections().collections[i].name)
     
-
-if 'schoolBrief' in collection_names:
-    collection_info = client.get_collection(collection_name = 'schoolBrief')
+if 'perprod' in collection_names:
+    collection_info = client.get_collection(collection_name = 'perprod')
 else:
-    collection_info = client.create_collection(collection_name = 'schoolBrief', vectors_config = models.VectorParams(distance = models.Distance.COSINE,
+    collection_info = client.create_collection(collection_name = 'perprod', vectors_config = models.VectorParams(distance = models.Distance.COSINE,
                                                                                                          size = 1536))
+
 for i, observation in enumerate(chunks):
     id = i 
     text = observation['text']
@@ -62,7 +67,7 @@ for i, observation in enumerate(chunks):
     except Exception as e:
         logging.error(f'The following exception has occured. Could not embed texts: {e}')
         
-    client.upsert(collection_name='schoolBrief',
+    client.upsert(collection_name='perprod',
                   points = [models.PointStruct(
                       id = i, 
                       payload = {

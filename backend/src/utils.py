@@ -5,9 +5,13 @@ from langchain.callbacks import AsyncIteratorCallbackHandler
 from dotenv import load_dotenv
 import os
 from langchain.prompts.prompt import PromptTemplate
+import pathlib
 
 
-load_dotenv()
+BASE_DIR = pathlib.Path(__file__).parent.parent
+ENV_PATH = BASE_DIR/'.env'
+
+load_dotenv(dotenv_path = ENV_PATH)
 
 prompt_template_school_brief = """
 You are an AI assistant working for the Department for Education providing answers to members of the public questions regarding school meals.

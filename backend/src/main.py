@@ -20,16 +20,19 @@ import openai
 from qdrant_client import QdrantClient
 import qdrant_client.models as models
 #File imports
-from utils import makechain_period, makechain_school
+from .utils import makechain_period, makechain_school
 #database
-from db.database import SessionLocal, engine
-from db import models, schemas
+from .db.database import SessionLocal, engine
+from .db import models, schemas
 from sqlalchemy.orm import Session
-from pydantic import ValidationError
+import pathlib
 
+
+BASE_DIR = pathlib.Path(__file__).parent.parent
+ENV_PATH = BASE_DIR/'.env'
+
+load_dotenv(dotenv_path = ENV_PATH)
 models.Base.metadata.create_all(bind = engine)
-
-load_dotenv()
 logging.basicConfig(level = logging.INFO)
 
 app = FastAPI()
@@ -57,9 +60,9 @@ def get_db():
     finally:
         db.close()
 
-async def send_message(input_query: str, ChatbotMeta: str, audience: str, tone: str, contextual_information: str) -> AsyncIterable[str]:
+async def send_message(input_query: str, chatbot_meta_id: str, audience: str, tone: str, contextual_information: str) -> AsyncIterable[str]:
     openai.api_key = os.getenv('OPENAI_API_KEY')
-    logging.info(f'OpenAI key: {openai.api_key}')
+    
     client = QdrantClient("localhost", port = 6333)
     EMBEDS = openai.Embedding.create(input = input_query, engine = 'text-embedding-ada-002')
     
@@ -74,9 +77,10 @@ async def send_message(input_query: str, ChatbotMeta: str, audience: str, tone: 
             event.set()
     callback = AsyncIteratorCallbackHandler()
     
+    logging.info(f'OpenAI key: {openai.api_key}')
     logging.info(f'Audience: {audience}, Tone: {tone}, Context: {contextual_information}')
     
-    if ChatbotMeta == 1:
+    if chatbot_meta_id == 1:
         chain = makechain_school(callback)
         try:
             resp = client.search(collection_name='schoolBrief',
@@ -128,12 +132,13 @@ def get_prompt_view( db:Session = Depends(get_db)):
 def get_all_chatbot(db: Session = Depends(get_db)):
     try:
         chatbots = db.query(models.ChatbotMeta).all()
-    except Exception:
+        logging.info(f'Here is the length of the chatbots: {len(chatbots)}')
+    except Exception as e:
         raise HTTPException(status_code = 404, detail='Could not connect to database')
     return chatbots
 
 @app.post('/chatbot-item')
-def new_chatbot(data: schemas.ChatbotItemCreate, db:Session = Depends(get_db)):
+def new_chatbot(data: schemas.ChatbotItem, db:Session = Depends(get_db)):
     try:
         chatbot_item = models.ChatbotItem(**data.dict())
         db.add(chatbot_item)
@@ -141,7 +146,7 @@ def new_chatbot(data: schemas.ChatbotItemCreate, db:Session = Depends(get_db)):
         db.refresh(chatbot_item)
         prompt_input = data.dict()
         return StreamingResponse(send_message(**prompt_input), media_type='text/event-stream')
-    except:
+    except Exception as e:
          raise StarletteHTTPException(status_code=500, detail='Internal server error')
 
 if __name__ == "__main__":
