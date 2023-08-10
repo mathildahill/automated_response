@@ -60,7 +60,7 @@ const PromptAdjuster = () => {
     // only insert into payload values which have been saved
     let payload = {}
 
-    payload = {...payload, ChatbotMeta: Number(chatbot)}
+    payload = {...payload, chatbot_meta_id: Number(chatbot)}
 
     if (!savedStatus.inputQuery || text.inputQuery === '') {
       alert('Please input a query');

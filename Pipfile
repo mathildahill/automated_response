@@ -4,7 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-langchain = "*"
+langchain = "==0.0.203"
 openai = "*"
 qdrant-client = "*"
 tiktoken = "*"
@@ -17,6 +17,7 @@ beautifulsoup4 = "*"
 sqlalchemy = "*"
 fastapi = "*"
 python-dotenv = "*"
+psycopg2-binary = "*"
 
 [dev-packages]
 
