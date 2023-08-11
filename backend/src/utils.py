@@ -1,17 +1,15 @@
-import logging
-from langchain.chat_models import ChatOpenAI
-from langchain.chains.question_answering import load_qa_chain
-from langchain.callbacks import AsyncIteratorCallbackHandler
-from dotenv import load_dotenv
 import os
-from langchain.prompts.prompt import PromptTemplate
 import pathlib
 
+from dotenv import load_dotenv
+from langchain.chains.question_answering import load_qa_chain
+from langchain.chat_models import ChatOpenAI
+from langchain.prompts.prompt import PromptTemplate
 
 BASE_DIR = pathlib.Path(__file__).parent.parent
-ENV_PATH = BASE_DIR/'.env'
+ENV_PATH = BASE_DIR / ".env"
 
-load_dotenv(dotenv_path = ENV_PATH)
+load_dotenv(dotenv_path=ENV_PATH)
 
 prompt_template_school_brief = """
 You are an AI assistant working for the Department for Education providing answers to members of the public questions regarding school meals.
@@ -54,25 +52,27 @@ and instead say Sorry this is not related to the document. It is very important 
 """
 
 
-
-
 QA_PROMPT_SCHOOL = PromptTemplate(
-    template=prompt_template_school_brief, input_variables=["context", "question", "contextually", "tone", "audience"])
+    template=prompt_template_school_brief,
+    input_variables=["context", "question", "contextually", "tone", "audience"],
+)
 
 QA_PROMPT_PERIOD = PromptTemplate(
-    template=prompt_template_period_brief, input_variables=['context', 'question', "contextually", "tone", "audience"]
+    template=prompt_template_period_brief,
+    input_variables=["context", "question", "contextually", "tone", "audience"],
 )
+
 
 def makechain_school(callback) -> load_qa_chain:
     model = ChatOpenAI(
         streaming=True,
         verbose=True,
         callbacks=[callback],
-        model='gpt-4',
-        openai_api_key=os.getenv("OPENAI_API_KEY")
+        model=os.getenv("OPENAI_MODEL"),
+        openai_api_key=os.getenv("OPENAI_API_KEY"),
     )
 
-    chain = load_qa_chain(llm=model, chain_type='stuff', prompt = QA_PROMPT_SCHOOL)
+    chain = load_qa_chain(llm=model, chain_type="stuff", prompt=QA_PROMPT_SCHOOL)
 
     return chain
 
@@ -82,10 +82,10 @@ def makechain_period(callback) -> load_qa_chain:
         streaming=True,
         verbose=True,
         callbacks=[callback],
-        model='gpt-4',
-        openai_api_key=os.getenv("OPENAI_API_KEY")
+        model=os.getenv("OPENAI_MODEL"),
+        openai_api_key=os.getenv("OPENAI_API_KEY"),
     )
 
-    chain = load_qa_chain(llm=model, chain_type='stuff', prompt = QA_PROMPT_PERIOD)
+    chain = load_qa_chain(llm=model, chain_type="stuff", prompt=QA_PROMPT_PERIOD)
 
     return chain
