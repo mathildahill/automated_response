@@ -18,6 +18,10 @@ sqlalchemy = "*"
 fastapi = "*"
 python-dotenv = "*"
 psycopg2-binary = "*"
+isort = "*"
+black = "*"
+flake8 = "*"
+pre-commit = "*"
 
 [dev-packages]
 
