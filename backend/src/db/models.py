@@ -22,7 +22,7 @@ class ChatbotItem(Base):
     audience = Column(String, default="Adults")
     contextual_information = Column(String, default=" ")
     input_query = Column(String)
-    chatbot_meta_id = Column(Integer, ForeignKey("chatbotmeta.id"))
+    chatbot_meta_id = Column(Integer, ForeignKey("ChatbotMeta.id"))
 
     # owner = relationship('ChatbotMeta', back_populates='ChatbotItems')
 
