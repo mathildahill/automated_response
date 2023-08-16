@@ -69,7 +69,7 @@ def get_db():
 
 async def send_message(
     input_query: str,
-    chatbot_meta_id: str,
+    chatbot_meta_id: int,
     audience: str,
     tone: str,
     contextual_information: str,
@@ -91,7 +91,6 @@ async def send_message(
 
     callback = AsyncIteratorCallbackHandler()
 
-    logging.info(f"OpenAI key: {openai.api_key}")
     logging.info(
         f"Audience: {audience}, Tone: {tone}, Context: {contextual_information}"
     )
@@ -124,6 +123,8 @@ async def send_message(
     documents = [
         Document(page_content=resp[i].payload["text"]) for i in range(len(resp))
     ]
+
+    print(documents)
 
     try:
         task = asyncio.create_task(
@@ -183,7 +184,14 @@ def get_all_chatbot(db: Session = Depends(get_db)):
 @app.post("/chatbot-item")
 def new_chatbot(data: schemas.ChatbotItem, db: Session = Depends(get_db)):
     try:
-        chatbot_item = models.ChatbotItem(**data.dict())
+        item_dictionary = data.dict()
+        chatbot_item = models.ChatbotItem(
+            tone=item_dictionary["tone"],
+            audience=item_dictionary["audience"],
+            contextual_information=item_dictionary["contextual_information"],
+            input_query=item_dictionary["input_query"],
+            ChatbotMeta=item_dictionary["chatbot_meta_id"],
+        )
         db.add(chatbot_item)
         db.commit()
         db.refresh(chatbot_item)
