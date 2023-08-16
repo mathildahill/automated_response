@@ -37,7 +37,7 @@ Note unless you have access to gpt-4 it is likely the model you will have access
 6. Create another terminal and populate vector database
 ```
 cd backend/upsertion
-pipenv run python school_briefings_upsert.py
+pipenv run python school_briefing_upsert.py
 pipenv run python period_products_upsert.py
 ```
 To check the database is populated on your machine navigate to following [url](http://localhost:6333/dashboard). There should be a school_brief and perprod indexes.
