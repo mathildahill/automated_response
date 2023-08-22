@@ -184,17 +184,6 @@ def get_all_chatbot(db: Session = Depends(get_db)):
 @app.post("/chatbot-item")
 def new_chatbot(data: schemas.ChatbotItem, db: Session = Depends(get_db)):
     try:
-        item_dictionary = data.dict()
-        chatbot_item = models.ChatbotItem(
-            tone=item_dictionary["tone"],
-            audience=item_dictionary["audience"],
-            contextual_information=item_dictionary["contextual_information"],
-            input_query=item_dictionary["input_query"],
-            ChatbotMeta=item_dictionary["chatbot_meta_id"],
-        )
-        db.add(chatbot_item)
-        db.commit()
-        db.refresh(chatbot_item)
         prompt_input = data.dict()
         return StreamingResponse(
             send_message(**prompt_input), media_type="text/event-stream"
