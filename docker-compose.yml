@@ -18,7 +18,7 @@ services:
       POSTGRES_DB: response_automater
     volumes:
       - ./data/postgres_data:/var/lib/postgresql/data
-      - ./backend/database_init/init.sql:/docker-entrypoint-initdb.d/init_db.sql
+      - ./database_init/init.sql:/docker-entrypoint-initdb.d/init_db.sql
     
   pgadmin:
     image: dpage/pgadmin4

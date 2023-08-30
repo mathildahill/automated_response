@@ -47,7 +47,7 @@ const PromptAdjuster = () => {
   };
 
   const fetchData = async () => {
-    const res = await fetch('http://localhost:8000/prompt_view');
+    const res = await fetch('http://localhost:8000/api/prompt-view');
     const json = await res.json();
     setData(json);
   }; 
@@ -89,7 +89,7 @@ const PromptAdjuster = () => {
 
     try{
 
-    const res = await fetch('http://localhost:8000/chatbot-item' , {
+    const res = await fetch('http://localhost:8000/api/chatbot-item' , {
       method:'POST',
         headers: {
           'Content-Type': 'application/json'

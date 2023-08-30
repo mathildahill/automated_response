@@ -27,7 +27,6 @@ class ChatbotMetaBase(BaseModel):
     name: str
     description: str
     is_active: str
-    # ChatbotItems: Optional[List[ChatbotItemsBase]] = None
 
 
 # Schema for reading Base model
@@ -48,3 +47,7 @@ class PromptView(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class UpsertView(BaseModel):
+    document: str

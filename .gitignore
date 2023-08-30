@@ -1,9 +1,11 @@
 chatbot/.next/
 chatbot/node_modules
-backend/.env
+.env
 .Pipfile
 .Pipfile.lock
 backend/src/__pycache__
 backend/__pycache__
 data
 
+backend/src/services/upsert.py
+backend/__init__.py
