@@ -1,11 +1,8 @@
 chatbot/.next/
 chatbot/node_modules
 .env
-.Pipfile
-.Pipfile.lock
 backend/src/__pycache__
 backend/__pycache__
 data
-
-backend/src/services/upsert.py
 backend/__init__.py
+backend/src/db/__pycache__/__init__.cpython-311.pyc
