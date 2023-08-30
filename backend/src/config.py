@@ -10,8 +10,6 @@ class Settings(BaseSettings):
     url_frontend: str = "http://localhost:3000"
     perprod_index: str = "perprod"
     schoolbrief_index: str = "schoolbrief"
-    backend_ip_address: str = "0.0.0.0"
-    backend_port: int = 8000
 
     class Config:
         env_file = "../../.env"
