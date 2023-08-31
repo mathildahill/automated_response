@@ -37,7 +37,7 @@ def get_all_chatbot(db: Session = Depends(get_db)):
 @router.post("/chatbot-item")
 def new_chatbot(data: ChatbotItem, db: Session = Depends(get_db)):
     try:
-        prompt_input = data.model_dump()
+        prompt_input = data.dict()
         return StreamingResponse(
             send_message(**prompt_input), media_type="text/event-stream"
         )
