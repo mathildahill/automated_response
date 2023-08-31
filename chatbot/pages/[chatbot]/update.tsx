@@ -24,6 +24,7 @@ const PromptAdjuster = () => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [messageState, setMessageState] = useState<Message>({message: '', isStreaming: false });
+  const API_URL = process.env.URL_BACKEND;
 
   const router = useRouter();
   const {chatbot} = router.query;
@@ -47,7 +48,7 @@ const PromptAdjuster = () => {
   };
 
   const fetchData = async () => {
-    const res = await fetch('http://localhost:8000/api/prompt-view');
+    const res = await fetch(`${API_URL}/api/prompt-view`);
     const json = await res.json();
     setData(json);
   }; 
@@ -88,8 +89,7 @@ const PromptAdjuster = () => {
     setButtonText('Loading...')
 
     try{
-
-    const res = await fetch('http://localhost:8000/api/chatbot-item' , {
+    const res = await fetch(`http://localhost:8000/api/chatbot-item` , {
       method:'POST',
         headers: {
           'Content-Type': 'application/json'
