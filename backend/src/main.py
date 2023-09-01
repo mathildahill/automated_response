@@ -40,5 +40,5 @@ async def http_exception_handler(request, exc):
 
 @app.get("/")
 async def root():
-    data = {"message": "Response automater application"}
+    data = {"message": "Welcome to the Response Automater app"}
     return JSONResponse(status_code=200, content=data)

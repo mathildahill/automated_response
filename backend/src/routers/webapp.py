@@ -2,7 +2,7 @@ import logging
 from typing import List
 
 from db import models
-from db.schemas import ChatbotItem, ChatbotMetaRead
+from db.schemas import ChatbotItem, ChatbotMetaRead, PromptView
 from dependencies import get_db
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
@@ -14,7 +14,7 @@ logging.basicConfig(level=logging.INFO)
 router = APIRouter(prefix="/api")
 
 
-@router.get("/prompt-view")
+@router.get("/prompt-view", response_model=PromptView)
 def get_prompt_view(db: Session = Depends(get_db)):
     prompt_view = db.query(models.PromptView).first()
     if prompt_view is None:
