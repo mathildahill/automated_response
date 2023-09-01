@@ -59,13 +59,9 @@
   "keywords": [
     "starter",
     "gpt4",
-    "pinecone",
     "typescript",
     "nextjs",
     "langchain",
-    "law",
-    "legal",
-    "pdf",
     "openai"
   ]
 }
