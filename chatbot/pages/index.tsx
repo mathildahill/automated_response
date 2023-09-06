@@ -4,9 +4,7 @@ import Layout from '@/components/layout';
 import {Chatbot} from '@/types/chatbot';
 
 export async function getServerSideProps() {
-  const API_URL = process.env.URL_BACKEND;
-  console.log("URL_BACKEND:", process.env.URL_BACKEND);
-  const res = await fetch(`${API_URL}/api/chatbots`);
+  const res = await fetch('http://0.0.0.0:8000/api/chatbots');
   const data: Chatbot[] = await res.json();
   
 

@@ -59,35 +59,35 @@ def data_upload(index_name: str, file_name: str) -> None:
                 ),
             )
 
-        for id, observation in enumerate(chunks):
-            text = observation["text"]
+    for id, observation in enumerate(chunks):
+        text = observation["text"]
 
-            try:
-                openai.api_key = settings.openai_api_key
-                res = openai.Embedding.create(
-                    input=text, engine=settings.openai_embedding_model
-                )
-            except openai.error.AuthenticationError:
-                logging.error("Invalid API key")
-            except openai.error.ApiConnectionError:
-                logging.error(
-                    "Issue connecting to open ai service. Check network and configuration settings"
-                )
-            except openai.error.RateLimitError:
-                logging.error("You have exceeded your predefined rate limits")
-            except openai.error.ServiceUnavaiableError:
-                logging.error("OpenAi service is down")
-
-            client.upsert(
-                collection_name=index_name,
-                points=[
-                    models.PointStruct(
-                        id=id,
-                        payload={"text": text},
-                        vector=res["data"][0]["embedding"],
-                    )
-                ],
+        try:
+            openai.api_key = settings.openai_api_key
+            res = openai.Embedding.create(
+                input=text, engine=settings.openai_embedding_model
             )
-            logging.info("Text uploaded")
+        except openai.error.AuthenticationError:
+            logging.error("Invalid API key")
+        except openai.error.ApiConnectionError:
+            logging.error(
+                "Issue connecting to open ai service. Check network and configuration settings"
+            )
+        except openai.error.RateLimitError:
+            logging.error("You have exceeded your predefined rate limits")
+        except openai.error.ServiceUnavaiableError:
+            logging.error("OpenAi service is down")
 
-        logging.info("Embeddings upserted")
+        client.upsert(
+            collection_name=index_name,
+            points=[
+                models.PointStruct(
+                    id=id,
+                    payload={"text": text},
+                    vector=res["data"][0]["embedding"],
+                )
+            ],
+        )
+        logging.info("Text uploaded")
+
+    logging.info("Embeddings upserted")

@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 
 from pydantic import BaseModel, validator
 
@@ -32,18 +32,6 @@ class ChatbotMetaBase(BaseModel):
 # Schema for reading Base model
 class ChatbotMetaRead(ChatbotMetaBase):
     id: int
-
-    class Config:
-        orm_mode = True
-
-
-class PromptView(BaseModel):
-    id: int
-    title: str
-    description: str
-    tone_view: List[str]
-    audience_view: List[str]
-    contextual_info_view: List[str]
 
     class Config:
         orm_mode = True
