@@ -3,7 +3,7 @@ from sqlalchemy import ARRAY, Boolean, Column, ForeignKey, Integer, String
 
 
 class ChatbotView(Base):
-    __tablename__ = "ChatbotView"
+    __tablename__ = "chatbotview"
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String)
@@ -12,18 +12,18 @@ class ChatbotView(Base):
 
 
 class ChatbotItem(Base):
-    __tablename__ = "ChatbotItem"
+    __tablename__ = "chatbotitem"
 
     id = Column(Integer, primary_key=True, index=True)
     tone = Column(String, default="Informative and finish off on a positive note")
     audience = Column(String, default="Adults")
     contextual_information = Column(String, default=" ")
     input_query = Column(String)
-    ChatbotMeta = Column(Integer, ForeignKey("chatbotview.id"))
+    chatbot_meta_id = Column(Integer, ForeignKey("chatbotview.id"))
 
 
 class PromptView(Base):
-    __tablename__ = "PromptView"
+    __tablename__ = "promptview"
 
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String)
