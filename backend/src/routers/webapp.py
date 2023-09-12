@@ -24,7 +24,7 @@ def get_prompt_view(db: Session = Depends(get_db)):
 
 @router.get("/chatbots", response_model=List[ChatbotMetaRead])
 def get_all_chatbot(db: Session = Depends(get_db)):
-    chatbots = db.query(models.ChatbotMeta).all()
+    chatbots = db.query(models.ChatbotView).all()
     logging.info(f"Here is the length of the chatbots: {len(chatbots)}")
     if len(chatbots) != 2:
         raise HTTPException(status_code=500, detail="Internal server error")

@@ -1,4 +1,4 @@
-CREATE TABLE ChatbotMeta (
+CREATE TABLE ChatbotView (
     id SERIAL PRIMARY KEY,
     name VARCHAR,
     description VARCHAR,
@@ -11,7 +11,7 @@ CREATE TABLE ChatbotItem(
     audience VARCHAR(250) DEFAULT 'Adults',
     contextual_information VARCHAR(2000),
     input_query VARCHAR,
-    chatbot_meta_id INTEGER REFERENCES ChatbotMeta(id)
+    chatbot_meta_id INTEGER REFERENCES ChatbotView(id)
 );
 
 CREATE TABLE PromptView (
@@ -23,7 +23,7 @@ CREATE TABLE PromptView (
     contextual_information VARCHAR[]
 );
 
-INSERT INTO ChatbotMeta(name, description, is_active)
+INSERT INTO ChatbotView(name, description, is_active)
 VALUES(
     'School Meals Chatbot',
     'A chatbot to answer queries relating to school meals which is based on the school meals briefing pack. 
@@ -31,7 +31,7 @@ VALUES(
     TRUE
 );
 
-INSERT INTO ChatbotMeta(name, description, is_active)
+INSERT INTO ChatbotView(name, description, is_active)
 VALUES(
     'Period Products Chatbot',
     'A chatbot to answer queries relating to period products based on the period products briefing pack. 

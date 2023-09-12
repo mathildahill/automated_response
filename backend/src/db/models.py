@@ -2,8 +2,8 @@ from db.database import Base
 from sqlalchemy import ARRAY, Boolean, Column, ForeignKey, Integer, String
 
 
-class ChatbotMeta(Base):
-    __tablename__ = "ChatbotMeta"
+class ChatbotView(Base):
+    __tablename__ = "ChatbotView"
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String)
@@ -19,7 +19,7 @@ class ChatbotItem(Base):
     audience = Column(String, default="Adults")
     contextual_information = Column(String, default=" ")
     input_query = Column(String)
-    ChatbotMeta = Column(Integer, ForeignKey("chatbotmeta.id"))
+    ChatbotMeta = Column(Integer, ForeignKey("chatbotview.id"))
 
 
 class PromptView(Base):
