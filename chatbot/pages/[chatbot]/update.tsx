@@ -47,8 +47,8 @@ const PromptAdjuster = () => {
   };
 
   const fetchData = async () => {
-    //const res = await fetch(`${API_URL}/api/prompt-view`);
-    const res = await fetch('http://localhost:8000/api/prompt-view');
+    const url = process.env.NEXT_PUBLIC_PROMPT_VIEW as string;
+    const res = await fetch(url);
     const json = await res.json();
     setData(json);
   }; 
@@ -58,7 +58,7 @@ const PromptAdjuster = () => {
   }, [messageState]);
 
   async function handleSubmit(){
-    // only insert into payload values which have been saved
+    const endpoint_url = process.env.NEXT_PUBLIC_RESPONSE_GENERATOR as string;
     let payload = {}
 
     payload = {...payload, chatbot_meta_id: Number(chatbot)}
@@ -89,7 +89,7 @@ const PromptAdjuster = () => {
     setButtonText('Loading...')
 
     try{
-    const res = await fetch('http://localhost:8000/api/chatbot-item', {
+    const res = await fetch(endpoint_url, {
       method:'POST',
         headers: {
           'Content-Type': 'application/json'
