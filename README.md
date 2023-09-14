@@ -97,4 +97,12 @@ pnpm run dev
 To stop running the frontend and backend close the terminals
 
 
+# Common Errors
+
+- When installing pnpm using the `npm install pnpm -g` you may need to this as an executable path. Otherwise when you run pnpm from the terminal you may get the following error: `pnpm command not recognised or found`. To set this an executable path on windows in the explorer you need to search to edit environment variables and then create variable called pnpm and sets it path as where you have pnpm installed. Another quick fix to this will be instead of calling pnpm run the command `npm -m pnpm` inplace of `pnpm`
+
+- Incorrectly configured environment variables - you need to make sure the **.env** file's are in the same location as the **.env.example** files else the project will not work. 
+
+- You need to make sure Docker daemon is running to start up the docker containers.
+
  
