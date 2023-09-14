@@ -69,7 +69,7 @@ def data_upload(index_name: str, file_name: str) -> None:
             )
         except openai.error.AuthenticationError:
             logging.error("Invalid API key")
-        except openai.error.ApiConnectionError:
+        except openai.error.APIConnectionError:
             logging.error(
                 "Issue connecting to open ai service. Check network and configuration settings"
             )
