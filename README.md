@@ -104,5 +104,4 @@ To stop running the frontend and backend close the terminals
 - Incorrectly configured environment variables - you need to make sure the **.env** file's are in the same location as the **.env.example** files else the project will not work. 
 
 - You need to make sure Docker daemon is running to start up the docker containers.
-k
  
